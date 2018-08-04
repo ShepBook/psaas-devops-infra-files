@@ -1,0 +1,32 @@
+{
+  "variables": {
+    "packer_pass": null
+  },
+  "builders": [
+    {
+      "type": "virtualbox-ovf",
+      "source_path": "/home/shepbook/Ubuntu_18.04_Auth0_Packer.ova",
+      "ssh_username": "packer",
+      "ssh_password": "{{user `packer_pass`}}",
+      "shutdown_command": "echo {{user `packer_pass`}} | sudo -S shutdown -P now",
+      "format": "ova",
+      "ssh_pty": "true"
+    }
+  ],
+  "provisioners": [{
+    "type": "shell",
+    "execute_command": "echo {{user `packer_pass`}} | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+    "script": "../scripts/ansible.sh"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `packer_pass`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "../scripts/setup.sh"
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "../ansible/docker_setup.yml",
+      "inventory_file": "../ansible/hosts"
+    }
+  ]
+}

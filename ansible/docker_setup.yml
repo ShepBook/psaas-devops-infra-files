@@ -1,0 +1,36 @@
+---
+- name: Setup docker and container
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure docker is installed
+      apt:
+        name: docker.io
+        update_cache: yes
+    - name: Ensure docker is running
+      shell: systemctl enable docker
+    - name: Install pip
+      apt:
+        name: python-pip
+        update_cache: yes
+    - name: Install docker-py for ansible
+      pip:
+        name: docker-py
+    - name: Portainer docker volume
+      docker_volume:
+        name: portainer_data
+    - name: Run portainer container
+      docker_container:
+        name: portainer
+        restart_policy: always
+        volumes: ["portainer_data:/data", "/var/run/docker.sock:/var/run/docker.sock"]
+        image: portainer/portainer
+        published_ports: ["9000:9000"]
+        exposed_ports: ["9000"]
+    - name: Run psaas container
+      docker_container:
+        name: psaas-devops-exercise
+        restart_policy: always
+        image: shepbook/psaas-devops-exercise
+        published_ports: ["8080:3000"]
+        exposed_ports: ["8080"]
