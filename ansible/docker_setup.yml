@@ -16,9 +16,17 @@
     - name: Install docker-py for ansible
       pip:
         name: docker-py
+        state: present
+    - name: Install pyOpenSSL for generating certs with ansible
+      pip:
+        name: pyOpenSSL
+        state: present
     - name: Portainer docker volume
       docker_volume:
         name: portainer_data
+    - name: Create psaas-net network for docker containers
+      docker_network:
+        name: psaas-net
     - name: Run portainer container
       docker_container:
         name: portainer
@@ -27,10 +35,41 @@
         image: portainer/portainer
         published_ports: ["9000:9000"]
         exposed_ports: ["9000"]
+        networks:
+          - name: psaas-net
     - name: Run psaas container
       docker_container:
-        name: psaas-devops-exercise
+        name: node-app
         restart_policy: always
         image: shepbook/psaas-devops-exercise
-        published_ports: ["8080:3000"]
-        exposed_ports: ["8080"]
+        exposed_ports: ["3000"]
+        networks:
+          - name: psaas-net
+    - name: Install nginx for reverse proxy
+      docker_container:
+        name: nginx
+        restart_policy: always
+        volumes: ["/etc/nginx/config/nginx-ssl.conf:/etc/nginx/nginx.conf:ro", "/etc/nginx/certs:/etc/nginx/certs:ro"]
+        image: nginx:alpine
+        published_ports: ["443:443", "80:80"]
+        exposed_ports: ["443", "80"]
+        networks:
+          - name: psaas-net
+    - name: Ensure directory for ssl certs exists
+      file:
+        path: /etc/nginx/certs
+        state: directory
+    - name: Generate OpenSSL private key
+      openssl_privatekey:
+        path: /etc/nginx/certs/privatekey.pem
+    - name: Generate CSR
+      openssl_csr:
+        path: /etc/nginx/certs/psaas-app.csr
+        privatekey_path: /etc/nginx/certs/privatekey.pem
+        common_name: "psaas-app"
+    - name: Generate self signed cert
+      openssl_certificate:
+        path: /etc/nginx/certs/fullchain.pem
+        privatekey_path: /etc/nginx/certs/privatekey.pem
+        csr_path: /etc/nginx/certs/psaas-app.csr
+        provider: selfsigned

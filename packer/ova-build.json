@@ -14,14 +14,24 @@
     }
   ],
   "provisioners": [{
-    "type": "shell",
-    "execute_command": "echo {{user `packer_pass`}} | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
-    "script": "../scripts/ansible.sh"
+      "type": "shell",
+      "execute_command": "echo {{user `packer_pass`}} | sudo -S sh -c '{{ .Vars }} {{ .Path }}'",
+      "script": "../scripts/ansible.sh"
     },
     {
       "type": "shell",
       "execute_command": "echo {{user `packer_pass`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
       "script": "../scripts/setup.sh"
+    },
+    {
+      "type": "file",
+      "source": "nginx-files",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `packer_pass`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "../scripts/nginx-config.sh"
     },
     {
       "type": "ansible-local",
