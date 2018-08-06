@@ -37,6 +37,11 @@
       "type": "ansible-local",
       "playbook_file": "../ansible/docker_setup.yml",
       "inventory_file": "../ansible/hosts"
+    },
+    {
+      "type": "shell",
+      "execute_command": "echo {{user `packer_pass`}} | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "script": "../scripts/cleanup.sh"
     }
   ]
 }
